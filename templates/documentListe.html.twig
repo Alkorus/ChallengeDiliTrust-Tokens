@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+{% block principal %}
+
+    <h2>Liste des documents dans votre bibliothèque</h2>
+
+    <table>
+        <tr>
+            <th style='padding:20px'>Mien</th>
+            <th style='padding:20px'>Titre</th>
+        </tr>
+        {% for document in documents %}
+        <tr>
+            <td>
+                {% if document.estAuteur %}
+                X
+                {% endif %}
+            </td>
+            <td><a href="{{path('document')}}/{{document.id}}">{{document.titre}}</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="{{path('upload')}}" class="btn btn-default">Enregistrer</a>
+
+{% endblock %}

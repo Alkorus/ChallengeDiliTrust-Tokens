@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+{% block principal %}
+
+    <h2>Création d'un utilisateur</h2>
+
+    {% if app.session.flashbag.get('notice') is defined %}
+        {% for notice in app.session.flashbag.get('notice') %}
+            <h4 style="color:red;">{{notice}}</h4>
+        {% endfor %}
+    {% endif %}
+
+    {{form_start(formUser)}}
+        <table>
+        <tr>
+            <td>{{ form_label(formUser.nom, "Nom") }}</td>
+            <td>{{ form_widget(formUser.nom) }}</td>
+            <td style="color:red;">{{ form_errors(formUser.nom) }}</td>
+        </tr>
+        <tr>
+            <td>{{ form_label(formUser.courriel, "Courriel") }}</td>
+            <td>{{ form_widget(formUser.courriel) }}</td>
+            <td style="color:red;">{{ form_errors(formUser.courriel) }}</td>
+        </tr>
+        <tr>
+            <td>{{ form_label(formUser.motdepasse.first, "Mot de passe") }}</td>
+            <td>{{ form_widget(formUser.motdepasse.first) }}</td>
+            <td style="color:red;">{{ form_errors(formUser.motdepasse.first) }}</td>
+        </tr>
+        <tr>
+            <td>{{ form_label(formUser.motdepasse.second, "Répéter le mot de passe") }}</td>
+            <td>{{ form_widget(formUser.motdepasse.second) }}</td>
+            <td style="color:red;">{{ form_errors(formUser.motdepasse.second) }}</td>
+        </tr>
+        <tr>
+            <td>{{ form_label(formUser.langue, "Langue de préférence") }}</td>
+            <td>{{ form_widget(formUser.langue) }}</td>
+            <td style="color:red;">{{ form_errors(formUser.langue) }}</td>
+        </tr>
+        </table>
+
+    {{form_end(formUser)}}
+
+{% endblock %}

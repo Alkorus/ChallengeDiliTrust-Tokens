@@ -1,19 +1,86 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-        {# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
-        {% block stylesheets %}
-            {{ encore_entry_link_tags('app') }}
-        {% endblock %}
+<html lang='fr'>
+	<head>
+		<meta charset="UTF-8">
+		<meta name='viewport' content='width=device-width, initial-scale=1'>
 
-        {% block javascripts %}
-            {{ encore_entry_script_tags('app') }}
-        {% endblock %}
-    </head>
-    <body>
-        {% block body %}{% endblock %}
-    </body>
+		<!-- Inclure le 'refresh' uniquement pour la page "historique" -->
+		{% if app.request.get('_route') == 'historique' %}
+			<meta http-equiv="refresh" content="15">
+		{% endif %}
+		
+		<title>
+			{% block title %}Bienvenue!
+			{% endblock %}
+		</title>
+		<!-- CSS de Bootstrap compilé et minifié  -->
+		{% block stylesheets %}
+			<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css'>
+			<link rel='stylesheet' href="{{asset('css/maison.css')}}">
+		{% endblock %}
+	</head>
+	<body class="fond ">
+		<div class="container-fluid">
+			<div class="row">
+				<div class='col-2'></div>
+				<div class='col-8'>
+					<header class="row">
+
+						<div class='col-5'>{{app.session.get('user_nom')}}</div>
+						<nav class="justify-content-end navbar col-7">
+							
+							{% if app.session.get('token_auth') %}
+								<a href="{{path('listeDocuments')}}" style='padding:20px'>Voir votre bibliothèque</a>
+								<a href="{{path('deconnecterCompte')}}" style='padding:20px'>Déconnexion</a>
+							{% else %}
+								<a href="{{path('creationCompte')}}" style='padding:20px'>Créer un compte</a>
+								<a href="{{path('connecterCompte')}}" style='padding:20px'>Connexion</a>
+							{% endif %}
+							<a href="{{path('pageAccueil')}}" style='padding:20px'>Accueil</a>
+													
+							{% set panier = app.session.get('panier') %}
+							{% set nbItems = 0 %}
+							{% for ligne in panier %}
+								{% set nbItems = nbItems + ligne.quantite %}
+							{% endfor %}
+						</nav>
+
+					</header>
+					{% for message in app.flashes('notice') %}
+						<div class="flash-notice col-12 alert alert-danger">
+							{{ message }}
+						</div>
+					{% endfor %}
+
+					{% for message in app.flashes('succ') %}
+						<div class="flash-notice col-12 alert alert-success">
+							{{ message }}
+						</div>
+					{% endfor %}
+
+
+					{% block principal %}{% endblock %}
+				</div>
+				<div class='col-2'></div>
+			</div>
+		</div>
+
+
+		<footer class="container-fluid">
+			<div class="row">
+				<div class="col-9"></div>
+				<div class="col-3">©François Massé 2022</div>
+			</div>
+		</footer>
+
+		{% block javascripts %}
+			<!-- jQuery library -->
+			<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+			<!-- Popper JS -->
+			<script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js'></script>
+			<!-- JavaScript compilé -->
+			<script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js'></script>
+
+		{% endblock %}
+	</body>
 </html>
