@@ -10,6 +10,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping\JoinTable;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\ManyToMany;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[ORM\Entity(repositoryClass: DocumentRepository::class)]
 class Document
@@ -36,10 +38,17 @@ class Document
     #[JoinTable(name:"document_user")]
     private $proprietaires;
 
-    public function __construct(User $user, string $nom)
-    {
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $type = null;
 
-        $this->nom = $nom;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tag = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $iv = null;
+
+    public function __construct(User $user)
+    {
         $this->MomentEnregistrement = new DateTime();
         $this->auteur = $user;
         $this->proprietaires = new ArrayCollection();
@@ -107,5 +116,41 @@ class Document
         }
         $this->proprietaires->removeElement($proprietaire);
         //$proprietaire->retirerABibliotheque($this);
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(?string $type): self
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    public function getTag(): ?string
+    {
+        return base64_decode($this->tag);
+    }
+
+    public function setTag(?string $tag): self
+    {
+        $this->tag = $tag;
+
+        return $this;
+    }
+
+    public function getIv(): ?string
+    {
+        return base64_decode($this->iv);
+    }
+
+    public function setIv(?string $iv): self
+    {
+        $this->iv = $iv;
+
+        return $this;
     }
 }

@@ -179,6 +179,14 @@ class UserController extends AbstractController
         if($request->getSession()->get('user_id') && $request->getSession()->get('user_nom') && $request->getSession()->get('token_auth'))
         {
             $user = $em->getRepository(User::class)->find($request->getSession()->get('user_id'));
+            if(empty($user)){
+                
+                // retirer les variables de session du client bloqué
+                $request->getSession()->remove('user_id');
+                $request->getSession()->remove('user_nom');
+                $request->getSession()->remove('token_auth');
+                return null;
+            }
             var_dump($user->getNom());
             $authToken = $request->getSession()->get('token_auth');
             //var_dump($authToken);
@@ -187,10 +195,7 @@ class UserController extends AbstractController
             //die();
             // Bloquer l'accès si l'autentification échoue
             if(!$resultatsToken['valide']){
-                $this->addFlash(
-                    'notice',
-                    'Connection refusée1.'
-                );
+                
                 // retirer les variables de session du client bloqué
                 $request->getSession()->remove('user_id');
                 $request->getSession()->remove('user_nom');
@@ -199,10 +204,7 @@ class UserController extends AbstractController
             }
             // L'authentification est OK mais le token a expiré, laisser savoir au client pourquoi on le bloque
             if($resultatsToken['timeOut']){
-                $this->addFlash(
-                    'notice',
-                    'Votre session a expiré.'
-                );
+                
                 // retirer les variables de session du client bloqué
                 $request->getSession()->remove('user_id');
                 $request->getSession()->remove('user_nom');
@@ -225,10 +227,7 @@ class UserController extends AbstractController
                         return $user;
 
                     } else {
-                        $this->addFlash(
-                            'notice',
-                            'Connection refusée2.'
-                        );
+                       
                         // retirer les variables de session du client bloqué
                         $request->getSession()->remove('user_id');
                         $request->getSession()->remove('user_nom');
@@ -239,10 +238,7 @@ class UserController extends AbstractController
 
                 } else {
                     // Si il n'y a pas de token de rafraichissement
-                    $this->addFlash(
-                        'notice',
-                        'Connection refusée3.'
-                    );
+                    
                     // retirer les variables de session du client bloqué
                     $request->getSession()->remove('user_id');
                     $request->getSession()->remove('user_nom');

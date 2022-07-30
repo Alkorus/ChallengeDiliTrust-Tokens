@@ -15,11 +15,24 @@
                 X
                 {% endif %}
             </td>
-            <td><a href="{{path('document')}}/{{document.id}}">{{document.titre}}</a></td>
+            <td><a href="{{path('document',{id: document.id})}}">{{document.titre}}</a></td>
         </tr>
         {% endfor %}
     </table>
 
-    <a href="{{path('upload')}}" class="btn btn-default">Enregistrer</a>
+    {{form_start(formDocument)}}
+        <table>
+        <tr>
+            <td>{{ form_label(formDocument.doc, "Document") }}</td>
+            <td>{{ form_widget(formDocument.doc) }}</td>
+            <td style="color:red;">{{ form_errors(formDocument.doc) }}</td>
+        </tr>
+        
+        <tr>
+            <td><input type="submit" name='enregistrer' value='Enregistrer' class='btn btn-info'/></td>
+        </tr>
+        </table>
+
+    {{form_end(formDocument, {'render_rest': false})}}
 
 {% endblock %}

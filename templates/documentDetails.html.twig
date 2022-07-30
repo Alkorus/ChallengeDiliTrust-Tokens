@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+{% block principal %}
+
+    <h2>Détails du document</h2>
+    <dic class="container">
+        <div class="row">
+            <div class="col-8">
+                <table>
+                    <tr>
+                        <td>Titre:</td>
+                        <td>{{document.nom}}</td>
+                    </tr>
+                    <tr>
+                        <td>Type:</td>
+                        <td>{{document.type}}</td>
+                    </tr>
+                    <tr>
+                        <td>Auteur:</td>
+                        <td>{{document.auteur.nom}}</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>{{document.auteur.courriel}}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding-right:20px'>Date enregistrement:</td>
+                        <td>{{document.momentEnregistrement|date('Y-m-d H:i')}}</td>
+                    </tr>
+                </table>
+                <h4>Accessible à:</h4>
+                {% for proprietaire in document.proprietaires %}
+                    <p>{{proprietaire.nom}} ({{proprietaire.courriel}})</p>
+                {% endfor %}
+                <a href="{{path('download',{id: document.id})}}" class="btn btn-info">Obtenir</a>
+                <a href="{{path('supprime',{id: document.id})}}" class="btn btn-danger">Supprimer</a>
+            </div>
+
+            <div class="col-4">
+                <form action="{{path('partage', {id_doc: document.id})}}" method="POST">
+                    <label>Sélectionner un utilisateur avec lequel partager ce document</label>
+                    <select name='partage' id='partage-selection'>
+                        {% for user in usersNP %}
+                            <option value={{user.id}}>{{user.nom}} ({{user.courriel}})</option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" value='Partager' class='btn btn-info'/>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+
+{% endblock %}

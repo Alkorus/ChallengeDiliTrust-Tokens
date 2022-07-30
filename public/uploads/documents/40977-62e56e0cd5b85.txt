@@ -1,0 +1,34 @@
+40977
+
+Extrait pour test Fen_Dynacom
+placer en haut de BTN_FactureProgressive
+MiseAJour_FactureProgressive()
+
+Mettre le reste en commentaires
+
+
+Extrait
+COL_MiseAJour_WINDEV
+
+627bb5e7a12c8900190bf1f7
+am.cienapps.com
+admin
+App type -> Module
+
+SI COL_Module.TrouverModuleActifSelonID(ctModuleFacturationProgressive) ALORS
+	Executer_Procedure(MiseAJour_FactureProgressive,"MiseAJour_FactureProgressive")
+FIN
+
+fiche configuration trouver ou 
+
+
+Fen_Dynacom
+COL_MiseAJour_WINDEV
+COL_Module
+Fiche_Configuration
+Fen_Man_Transfert_Facture
+Table_Man_Req_Soumission
+Fiche_Commande
+Fiche_Atelier
+Fiche_Departement
+COL_GestionColonnes

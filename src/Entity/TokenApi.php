@@ -16,7 +16,6 @@ define('AUTH_TOKEN_DELAIS_MIN', 15);
 define('REFRESH_TOKEN_DELAIS_H', 1);
 define('CIPHER', 'aes-128-gcm');
 define('KEY', 'cc3da93850f4d1dd031f41eaf6ab4140');
-define('TAG', '0f4d1dd031');
 
 
 #[ORM\Entity(repositoryClass: TokenApiRepository::class)]

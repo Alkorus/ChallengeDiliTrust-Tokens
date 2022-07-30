@@ -1,0 +1,76 @@
+40569
+
+
+
+un paramètre à la querry avec date modification
+
+si pas param, r'envoyer tour les BT OUVERTS
+Si param, renvoyer les BT ouverts ou la date modif > param
+
+
+BT ouvert, table man_job_info, si il y a une info dans date_fermeture, c'est fermé
+
+Man_JobInfo.IDJob == Coupon.IDCoupon
+
+X*ajouter date-heure
+X*utiliser moment lib nodejs pour string to date (voir package.json)
+X*Switcher noms en anglais
+X*Gérer sous adresses
+
+
+Doc dans Confluence
+Exemple: https://cienapps.atlassian.net/l/c/jv53v5wu
+
+
+
+
+>Numéro BT (ouvert)			Coupon.IDBon_Travail
+>Date échéance (date fin de production)		Man_JobInfo.?
+>Adresse de livraison (			Coupon.IDClientAdresse		!!! Majorité des coupons n'ont pas un Client_Adresse (voir méthode Charger_Taches de CieMobile pour même problème
+>Ville de livraison
+>Vendeur 
+>Représentant
+>État			Coupon.IDTypeEtat
+
+
+//let transformedResp = [];
+        //let missingAdresses = [];
+        /*response.forEach(resp => {
+            if(resp.DateEcheance != null) {
+                resp.DateEcheance = convertStringDate(resp.DateEcheance);
+            }
+            if(resp.Adresse == null) {
+                missingAdresses.push(resp.IDBT);
+            }
+
+            //transformedResp.push(transformBT(resp));
+        })*/
+
+        /*const transformResponse = response.map((resp) => {
+            var transformed = transformBT(resp);
+            return transformed
+        })*/
+
+
+function transformBT(bt) {
+    try {
+        if(bt.Adresse == null){
+            bt.Adresse = bt.Adresse2;
+            bt.Ville = bt.Ville2;
+        }
+        return bt;
+
+    }catch(e) {
+        logger.log('error', e.stack);
+        throw Error(e.message);
+    }
+}
+
+
+
+
+30132
+"Adresse": "25, RUE DU SORBIER",
+        "Ville": "BEAUPRÉ",
+        "Adresse2": "9, RUE DUFOUR",
+        "Ville2": "STE-ANNNE-DE-BEAUPRÉ",

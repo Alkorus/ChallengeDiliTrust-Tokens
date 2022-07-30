@@ -121,7 +121,7 @@ class GestionTokens extends AbstractController
         }
         // Rendu ici le token est valide
         $reponse['valide'] = true;    
-        var_dump($reponse);
+        //var_dump($reponse);
         var_dump('evaluer7');
         return $reponse;
     }
