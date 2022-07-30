@@ -28,6 +28,7 @@ class TokenApi
     #[ORM\Column()]
     private ?int $id = null;
 
+    // Portion encrypté du token qui sera enregistré dans les variables de session de l'utilisateur afin de procéder à l'autentification
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $token = null;
 
@@ -64,11 +65,14 @@ class TokenApi
         $this->estActif = true;
     }
 
+    // La création du token encrypté doit venir après l'enregistrement de l'entité dans la BD afin d'y inclure son ID
     public function creerToken(): ?string
     {
-        if ($this->id < 1) {
+        // S'assurer que le token existe déjà dans la BD
+        if ($this->id == null) {
             throw new Exception('Objet token non inclus dans la BD');
         }
+        // Assembler les informations qui seront incluses dans la chaine token encryptée et transformer le tableau en chaine
         $tokenInfo = array(
             'tokenID' => $this->id,
             'expiration' => $this->expiration,
@@ -76,23 +80,23 @@ class TokenApi
             'estRefresh' => $this->estRefresh
         );
         $tokenInfo = json_encode(array('item' => $tokenInfo), JSON_FORCE_OBJECT);
+        // encrypter le token
         $ivlen = openssl_cipher_iv_length(CIPHER);
         $iv = openssl_random_pseudo_bytes($ivlen);
         $token = openssl_encrypt($tokenInfo, CIPHER, KEY,$options=0, $iv, $tag);
+        // enregistrer les informations manquantes au token sauvegardé en BD
         $this->token = $token;
-        //var_dump($tag);
         $this->tag = base64_encode($tag);
-        //var_dump($this->tag);
         $this->iv = base64_encode($iv);
         return $token;
     }
 
+    // Décoder une chaine token pour en tirer les information encryptés
     public static function lireToken(string $token, string $tag, string $iv): ?array
     {
         $tokenInfo = openssl_decrypt($token, CIPHER, KEY, $options=0, $iv, $tag[0]);
         $tokenInfo = json_decode($tokenInfo, true);
         if (json_last_error() === JSON_ERROR_NONE) {
-            //var_dump($tokenInfo);
             return $tokenInfo["item"];
         }
         throw new Exception('Le token fournit est invalide');

@@ -35,10 +35,6 @@ class User
     #[ORM\JoinColumn(nullable: false)]
     private ?Langue $langue = null;
 
-    // La liste des documents uploadés par un utilisateur
-    //#[OneToMany(targetEntity:"Document", mappedBy:"auteur" )]
-    //private $enfants;
-
     // La liste des documents accessibles pour un utilisateur
     #[ManyToMany(targetEntity:"Document", inversedBy:"proprietaires")]
     #[JoinTable(name:"document_user")]
@@ -52,8 +48,6 @@ class User
 
     public function __construct()
     {
-        
-        //$this->enfants = new Collection();
         $this->bibliotheque = new ArrayCollection();
     }
 
@@ -88,7 +82,6 @@ class User
 
     public function testerMotdepasse($motDePasse): ?bool
     {
-        // return sodium_crypto_pwhash_str_verify($this->motdepasse, $motDePasse);
         return password_verify($motDePasse, $this->motdepasse);
     }
 
@@ -143,21 +136,8 @@ class User
         return $this;
     }
 
-    // public function getEnfants(): ArrayCollection
-    // {
-    //     return $this->enfants;
-    // }
-
-    // public function ajouterEnfant(Document $enfant): self
-    // {
-    //    $this->enfants->add($enfant);
-
-    //     return $this;
-    // }
-
     public function getBibliotheque(): Collection
     {
-        //var_dump($this->bibliotheque);
         return $this->bibliotheque;
     }
 
@@ -167,7 +147,6 @@ class User
             return;
         }
         $this->bibliotheque->add($doc);
-        //$doc->ajouterProprietaire($this);
     }
 
     public function retirerABibliotheque(Document $doc)
@@ -176,7 +155,6 @@ class User
             return;
         }
         $this->bibliotheque->removeElement($doc);
-        //$doc->retirerProprietaire($this);
     }
 
 

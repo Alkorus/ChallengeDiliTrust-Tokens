@@ -106,7 +106,6 @@ class Document
             return;
         }
         $this->proprietaires->add($proprietaire);
-        //$proprietaire->ajouterABibliotheque($this);
     }
 
     public function retirerProprietaire(User $proprietaire)
@@ -115,7 +114,6 @@ class Document
             return;
         }
         $this->proprietaires->removeElement($proprietaire);
-        //$proprietaire->retirerABibliotheque($this);
     }
 
     public function getType(): ?string

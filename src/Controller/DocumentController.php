@@ -18,10 +18,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
-define('MAX_FILE_SIZE', 8388608);  // 8Mo de limite
-define('CIPHER', 'aes-128-gcm');
-define('KEY', '74d2d07841c8cf5d495147793cd82ff0');
-define('TAILLE_BLOC_ENCRYPTION', 10000); // Taille des blocs encryptés à la fois pour les données
+// 28Mo de limite, la méthode d'encryption des documents requiert deux fois la taille du document pour travailler,
+// on met donc la limite un peu en dessous de la moitié de la RAM disponible à PHP (60 MO)
+define('MAX_FILE_SIZE', 29360128);  
+define('CIPHER_DOC', 'aes-128-gcm');
+define('KEY_DOC', '74d2d07841c8cf5d495147793cd82ff0');
 
 class DocumentController extends AbstractController
 {
@@ -29,27 +30,22 @@ class DocumentController extends AbstractController
     /**
      * @Route("/listeBibli", name="listeDocuments") 
      */
+    // Accès à la liste des documents accessibles au client et gestion de l'ajout de document
     public function accesBibliAction(ManagerRegistry $doctrine, Request $request, SluggerInterface $slugger)
     {
-        var_dump('acces0');
         // Autentifier l'utilisateur à partir de ses infos de session et des tokens
         $gestionUser = new UserController();
         $user = $gestionUser->EvaluerConnection($doctrine, $request);
-        var_dump('acces1');
         if($user == null){
             $this->addFlash(
                 'notice',
                 'Accès refusé'
             );
             return $this->redirectToRoute('pageAccueil');
-        }
-        var_dump('acces3');
-        
+        }      
         $em = $doctrine->getManager();
         
-        var_dump('acces5');
-
-        $doc = new Document($user);
+        $doc = new Document($user); // Document généré uniquement pour utiliser le créateur de formulaire
         $formDocument = $this->createForm(DocumentType::class, $doc);
         
         // Gérer l'envoi du formulaire d'enregistrement de document
@@ -58,15 +54,17 @@ class DocumentController extends AbstractController
             $em = $doctrine->getManager();
             $formDocument->handleRequest($request);
             $docFile = $formDocument->get('doc')->getData();
-            var_dump(filesize($docFile));
+            
+            // S'assurer que le document n'est pas trop volumineux
             if(filesize($docFile) > MAX_FILE_SIZE)
             {
                 $this->addFlash(
                     'notice',
-                    "Document trop volumineux, taille maximale de 8Mo"
+                    "Document trop volumineux, taille maximale de 28Mo"
                 );
                 return $this->redirectToRoute('listeDocuments');
             }
+            
             $doc = $this->sauvegarderDocument($slugger, $docFile, $user);
             if($doc == null){
                 $this->addFlash(
@@ -79,10 +77,10 @@ class DocumentController extends AbstractController
             $em->flush();
         }
 
-        // Obtenir les documents dont il est propriétaire
+        // Obtenir les documents dont le client est propriétaire
         $docs = $user->getBibliotheque();
         $documents = [];
-        var_dump('acces4');
+
         // Nettoyer la liste des documents pour concerver seulement les infos essentielles
         // De mémoire le twig est remplis par le serveur avant d'être envoyé au cclient donc étape probablement superflue, 
         // mais mieux vaux être sûr
@@ -100,8 +98,6 @@ class DocumentController extends AbstractController
             array_push($documents, $document);
         }
 
-        var_dump('acces6');
-
         return $this->render("documentListe.html.twig", ['documents' => $documents, 'formDocument' => $formDocument->createView()]);
 
     }
@@ -109,9 +105,10 @@ class DocumentController extends AbstractController
     /**
      * @Route("/document/{id}", name="document") 
      */
+    // Accès à la page des détails d'un document spécifique
     public function presenterDocument($id, ManagerRegistry $doctrine, Request $request)
     {
-        var_dump('doc1');
+        
         // Autentifier l'utilisateur à partir de ses infos de session et des tokens
         $gestionUser = new UserController();
         $user = $gestionUser->EvaluerConnection($doctrine, $request);
@@ -122,11 +119,10 @@ class DocumentController extends AbstractController
             );
             return $this->redirectToRoute('pageAccueil');
         }
-        // Vérifier que l'utilisateur autentifée a le droit d'accès à ce document
 
+        // Vérifier que l'utilisateur autentifée a le droit d'accès à ce document
         $doc = $this->accesDocument($doctrine, $user, $id);
         // Vérifier que le document demandé existe
-        var_dump('doc1');
         if($doc == Null){
             $this->addFlash(
                 'notice',
@@ -135,12 +131,11 @@ class DocumentController extends AbstractController
             return $this->redirectToRoute('listeDocuments');
         }
         
-        var_dump('doc1');
+
         // Faire la liste des utilisateurs non propriétaires (usersNP)
         $em = $doctrine->getManager();
         $users = $em->getRepository(User::class)->findAll();
         $usersNP = [];
-        //var_dump($users::count());
         // Ajouter un premier utilisateur vide pour le dropdown
         $userNP['id'] = 0;
         $userNP['nom'] = '';
@@ -166,6 +161,7 @@ class DocumentController extends AbstractController
     /**
      * @Route("/download/{id}", name="download") 
      */
+    // Transfert d'un document du serveur vers le client
     public function downloadDocument($id, ManagerRegistry $doctrine, Request $request)
     {
         $gestionUser = new UserController();
@@ -180,7 +176,6 @@ class DocumentController extends AbstractController
 
         // Vérifier que l'utilisateur autentifée a le droit d'accès à ce document
         $doc = $this->accesDocument($doctrine, $user, $id);
-        // Vérifier que le document demandé existe
         if($doc == Null){
             $this->addFlash(
                 'notice',
@@ -189,24 +184,36 @@ class DocumentController extends AbstractController
             return $this->redirectToRoute('listeDocuments');
         }
 
-        $docFile = $this->getParameter('documents_dossier') . '/' . $doc->getLien();
-        //$docFile = urldecode($docFile);
-        var_dump($docFile);
-        $docBin = new BinaryFileResponse($docFile);
-       // var_dump(filesize($docBin));
-        
-
         // décrypter le document 
         $iv = $doc->getIv();
         $tag = $doc->getTag();
-        $docBin = openssl_decrypt($docBin, CIPHER, KEY, $options=0, $iv, $tag[0]);
+        // Ouvrir le document encrypté en lecture et un document vide en écriture
+        $source = $this->getParameter('documents_dossier') . $doc->getLien();
+        $cheminTemp = $this->getParameter('downloads_dossier') . $doc->getLien();
 
+        $docEncrypt = fopen($source, 'rb');
+        $docDecrypte = fopen($cheminTemp, 'w');
+        // lire les données brutes du document en lecture
+        $texteEncrypte = fread($docEncrypt, filesize($source));
+        // Décrypter le document encrypté et écrire le résultat dans le document en écriture
+        $document = openssl_decrypt($texteEncrypte, CIPHER, KEY_DOC,$options=0, $iv, $tag);
+        fwrite($docDecrypte, $document);
+        fclose($docDecrypte);
+        fclose($docEncrypt);
+
+        // Récupérer le document décrypté en un format utilisable pour la réponse
+        $docBin = new BinaryFileResponse($cheminTemp);
+       
+        // Remettre le type du document original dans la réponse
         $docBin->headers->set('Content-Type', $doc->getType());
         $docBin->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             $doc->getNom() . "." . $doc->getType()
         );
-        //die();
+
+        // Effacer le document décrypté après son envoi
+        $docBin->deleteFileAfterSend(true);
+
         ob_clean();     // nettoyer le buffer de sortie, sans ça le download finissait toujours juste avant la fin du document
         return $docBin;
 
@@ -215,8 +222,10 @@ class DocumentController extends AbstractController
     /**
      * @Route("/partage/{id_doc}", name="partage") 
      */
+    // Donner accès à un document à un utilisateur n'y ayant pas encore droit
     public function partagerDocument($id_doc, ManagerRegistry $doctrine, Request $request)
     {
+        // Vérifier l'autentification du client et son droit d'accès au document
         $gestionUser = new UserController();
         $user = $gestionUser->EvaluerConnection($doctrine, $request);
         if($user == null){
@@ -227,7 +236,6 @@ class DocumentController extends AbstractController
             return $this->redirectToRoute('pageAccueil');
         }
         $doc = $this->accesDocument($doctrine, $user, $id_doc);
-        var_dump('part1');
         if($doc == Null){
             $this->addFlash(
                 'notice',
@@ -236,6 +244,7 @@ class DocumentController extends AbstractController
             return $this->redirectToRoute('listeDocuments');
         }
         
+        // Récupérer l'id de l'utilisateur avec lequel partager le document et s'assurer qu'il existe
         $idUserPartage = $_POST['partage'];
         $em = $doctrine->getManager();
         $userPartage = $em->getRepository(User::class)->find($idUserPartage);
@@ -247,29 +256,12 @@ class DocumentController extends AbstractController
             );
             return $this->redirectToRoute('document', ['id' => $id_doc]);
         }
+        // Partager le document
         $doc->ajouterProprietaire($userPartage);
         $em->persist($doc);
         $em->flush();
         
         return $this->redirectToRoute('document', ['id' => $id_doc]);
-    }
-
-    /**
-     * @Route("/supprime/{id}", name="supprime") 
-     */
-    public function supprimerDocument($id, ManagerRegistry $doctrine, Request $request)
-    {
-        $gestionUser = new UserController();
-        $user = $gestionUser->EvaluerConnection($doctrine, $request);
-        if($user == null){
-            $this->addFlash(
-                'notice',
-                'Accès refusé'
-            );
-            return $this->redirectToRoute('pageAccueil');
-        }
-
-
     }
 
     // Méthode retournant le document si son accès est autorisé et Null sinon
@@ -281,34 +273,52 @@ class DocumentController extends AbstractController
         if(empty($doc)){
             return null;
         }
+        // vérifier que l'utilisateur y a accès
         if(!($user->getBibliotheque())->contains($doc)){
             return null;
         }
         return $doc;
     }
 
+    // Encryption et sauvegarde d'un document sur le serveur
     public function sauvegarderDocument(SluggerInterface $slugger, UploadedFile $docFile, User $user): Document
     {
+        // sortir les détails du document pour l'entité et créer le chemon d'accès du document temporaire et de l'ancrypté
         $doc = new Document($user);
         $extension = $docFile->guessExtension();
         $nomOriginal = pathinfo($docFile->getClientOriginalName(), PATHINFO_FILENAME);
         $nomSecure = $slugger->slug($nomOriginal);
-        $nomSave = $nomSecure . '-' . uniqid() . '.' . $extension;
+        $nomSave = $nomSecure . '-' . uniqid();
+        $cheminTemp = $this->getParameter('temp_dossier') . $nomSave;
+        $chemin = $this->getParameter('documents_dossier') . $nomSave;
 
-        // encrypter le document
-        $ivlen = openssl_cipher_iv_length(CIPHER);
-        $iv = openssl_random_pseudo_bytes($ivlen);
-        $document = openssl_encrypt($docFile, CIPHER, KEY,$options=0, $iv, $tag);
-
+        // enregistrer une version temporaire du document
         try {
             $docFile->move(
-                $this->getParameter('documents_dossier'),
+                $this->getParameter('temp_dossier'),
                 $nomSave
             );
-
         } catch (FileException $e) {
             return null;
         }
+
+        // commencer par ouvrir un document ou ira les données encryptées et le fichier temporaire
+        $docCrypte = fopen($chemin, 'w');
+        $docInit = fopen($cheminTemp, 'rb');
+        // sortir du fichier temporaire les données numériques à encrypter
+        $initial = fread($docInit, filesize($cheminTemp));
+        // encrypter le document et enregistrer le document
+        $ivlen = openssl_cipher_iv_length(CIPHER_DOC);
+        $iv = openssl_random_pseudo_bytes($ivlen);
+        $document = openssl_encrypt($initial, CIPHER, KEY_DOC,$options=0, $iv, $tag);
+        fwrite($docCrypte, $document);
+        fclose($docCrypte);
+        fclose($docInit);
+
+        // effacer le document temporaire
+        unlink($cheminTemp);
+
+        // Enregistrer les données générales du document, y compris celles permettant de décrypter plus tard
         $doc->setNom($nomOriginal);
         $doc->setLien($nomSave);
         $doc->setType($extension);

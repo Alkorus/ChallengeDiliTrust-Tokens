@@ -28,6 +28,7 @@ class UserController extends AbstractController
     /**
      * @Route("/login", name="connecterCompte") 
      */
+    // Se connecter à un compte
     public function loginAction(ManagerRegistry $doctrine, Request $request)
     {
         // Si le client est déjà connecté
@@ -48,7 +49,7 @@ class UserController extends AbstractController
             $em = $doctrine->getManager();
             $formUser->handleRequest($request);
 
-            $courriel = $formUser->get('courriel')->getData();
+            $courriel = $formUser->get('courriel')->getData(); // Le courriel est un champ unique
             $motdepasse = $_POST['pswd'];
             $user = $em->getRepository(User::class)->findOneBy(['courriel' => $courriel]);
             // Si l'utilisateur n'a pas été trouvé dans la BD
@@ -92,8 +93,9 @@ class UserController extends AbstractController
     {
         $user = $this->EvaluerConnection($doctrine, $request);
         if($user != null){
-            var_dump($user->getNom());
+            // Désactiver les tokens de l'utilisateur
             GestionTokens::DesactiverTokensUtilisateur($doctrine, $user);
+            // Effacer les variables de session
             $request->getSession()->remove('user_id');
             $request->getSession()->remove('user_nom');
             $request->getSession()->remove('token_auth');
@@ -127,23 +129,21 @@ class UserController extends AbstractController
             );
             return $this->redirectToRoute('pageAccueil');
         }
-        var_dump('test0');
+        // Si il n'est pas connecté
         $user = new User();
         $formUser = $this->createForm(UserType::class, $user);
         
         if($request->ismethod("POST"))
         {
-            //var_dump('test1');
             $formUser->handleRequest($request);
-            var_dump('test2');
+            
             if($formUser->isValid())
             {
-                var_dump('test3');
                 $em = $doctrine->getManager();
                 
                 $em->persist($user);
                 $em->flush();
-                var_dump('test4');
+                
                 // Créer le Token d'autentification
                 $estRefresh = false;
                 $autToken = GestionTokens::CreerToken($doctrine, $user, $estRefresh);
@@ -151,7 +151,7 @@ class UserController extends AbstractController
                 $estRefresh = true;
                 $refreshToken = GestionTokens::CreerToken($doctrine, $user, $estRefresh);
 
-                // Enregistrer les informations de session
+                // Enregistrer les informations de session, le client n'aura pas à se reconnecter
                 $request->getSession()->set('user_id', $user->getID());
                 $request->getSession()->set('user_nom', $user->getNom());
                 $request->getSession()->set('token_auth', $autToken);
@@ -163,8 +163,7 @@ class UserController extends AbstractController
                 return $this->redirectToRoute('pageAccueil');
             }
         }
-        //var_dump($formUser);
-        //die();
+        
         return $this->render('userCreation.html.twig', array('formUser' => $formUser->createView()));
     }
 
@@ -187,12 +186,10 @@ class UserController extends AbstractController
                 $request->getSession()->remove('token_auth');
                 return null;
             }
-            var_dump($user->getNom());
             $authToken = $request->getSession()->get('token_auth');
-            //var_dump($authToken);
+            
             $resultatsToken = GestionTokens::EvaluerToken($doctrine, $user, $authToken);
-            var_dump($resultatsToken);
-            //die();
+            
             // Bloquer l'accès si l'autentification échoue
             if(!$resultatsToken['valide']){
                 

@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\LangueRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+// Entité en prévision d'une gestion de la langue, manqué de temps pour l'implémenter
+
 #[ORM\Entity(repositoryClass: LangueRepository::class)]
 class Langue
 {

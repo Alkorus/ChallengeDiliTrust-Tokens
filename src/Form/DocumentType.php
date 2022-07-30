@@ -14,25 +14,10 @@ class DocumentType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            // ->add('nom')
-            // ->add('lien')
-            // ->add('MomentEnregistrement')
-            // ->add('auteur')
-            // ->add('proprietaires')
             ->add('doc', FileType::class, [
                 'label' => 'Ajouter un document',
                 'mapped' => false,
                 'required' => true,
-                // 'constraints' => [
-                //     new File([
-                //         'maxSize' => '1024k',
-                //         'mimeTypes' => [
-                //             'application/pdf',
-                //             'application/x-pdf',
-                //         ],
-                //         'mimeTypesMessage' => 'Please upload a valid PDF document',
-                //     ])
-                // ]
             ])
         ;
     }

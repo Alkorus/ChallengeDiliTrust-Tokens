@@ -26,6 +26,8 @@ define('FENETRE_RAFRAICHISSEMENT_MIN', 5);
 
 class GestionTokens extends AbstractController
 {
+    // Méthode responsable de gérer la création complète d'un token pour un utilisateur
+    // Retourne la string Token encryptée à enregistrer dasn les variables de session
     public static function CreerToken(ManagerRegistry $doctrine, User $user, bool $estRefresh): ?string
     {
         $em = $doctrine->getManager();
@@ -55,11 +57,15 @@ class GestionTokens extends AbstractController
         return $tokenStr;
     }
 
-    
+    // Méthode analysant un token et retournant un tableau de trois booléens en fonction de son rapport avec l'utilisateur fourni
+    // valide => est-ce que le token est valide et lié à l'utilisateur
+    // refresh => le token d'autorisation est bientôt expiré et il doit être refraichit
+    // timeout => le token a expiré
     public static function EvaluerToken(ManagerRegistry $doctrine, User $user, string $token): ?array
     {
         $em = $doctrine->getManager();
         $reponse = array('valide' => false, 'refresh' => false, 'timeOut' => false);
+        // Commence par vérifier si la chaine token fournie correspond à l'un des deux tokens en mémoire pour l'utilisateur
         if($user->getAuthToken()->getToken() == $token)
         {
             $tag = $user->getAuthToken()->getTag();
@@ -69,48 +75,44 @@ class GestionTokens extends AbstractController
             $tag = $user->getRefreshToken()->getTag();
             $iv = $user->getRefreshToken()->getIv();
         } else {
-            var_dump('evaluer1');
             return  $reponse;
         }
+        // Essayer de décoder la chaine token
         try{
             $tokenInfo = TokenApi::lireToken($token, $tag, $iv);
         } catch(Exception $e) {
             // si il y a eu une erreur dans la lecture du token, on considère qu'il est invalide
-            var_dump($e);
             return  $reponse;
         }
-        var_dump('tokenInfo:');
-        var_dump($tokenInfo);
+        
         // Tester que le Token est le bon (comparer le token enregistré dans la BD et celui passé en param)
         $tokenBD = $em->getRepository(TokenApi::class)->find($tokenInfo['tokenID']);
         if ($tokenBD->getToken() != $token){
-            var_dump('evaluer3');
+            
             return  $reponse;
         }
         // Tester que le Token est encore actif
         if (!$tokenBD->getEstActif()){
-            var_dump('evaluer4');
+            
             return  $reponse;
         }
         // Vérifier si le token est expiré
         $maintenant = new DateTime();
         if ($maintenant > $tokenBD->getExpiration())
             $reponse['timeOut'] = true;
+            $tokenBD->setEstActif(false);   // Désactiver le token expiré
             // On continue le processus car on ne fera un message d'expiration que si le reste du token est OK, limiter l'info donnée
         
         if ($tokenInfo['estRefresh']) {
             // On vérifie que l'utilisateur ayant passé le token est le propriétaire de celui-ci
             if ($user->getRefreshToken()->getToken() != $token){
-                var_dump('evaluer5');
                 return  $reponse;
             }
 
         } else {
             // Vérifier que l'utilisateur ayant passé le token est le propriétaire de celui-ci
             if ($user->getAuthToken()->getToken() != $token){
-                var_dump($token);
-                var_dump($user->getAuthToken()->getToken());
-                var_dump('evaluer6');
+                
                 return  $reponse;
             }
 
@@ -121,11 +123,11 @@ class GestionTokens extends AbstractController
         }
         // Rendu ici le token est valide
         $reponse['valide'] = true;    
-        //var_dump($reponse);
-        var_dump('evaluer7');
+
         return $reponse;
     }
 
+    // Méthode effectuant la désactivation complète des tokens d'un utilisateur
     public static function DesactiverTokensUtilisateur(ManagerRegistry $doctrine, User $user)
     {
         $em = $doctrine->getManager();
