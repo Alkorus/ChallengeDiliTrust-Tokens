@@ -21,6 +21,7 @@
             <td>{{ form_widget(formUser.courriel) }}</td>
             <td style="color:red;">{{ form_errors(formUser.courriel) }}</td>
         </tr>
+        <label>Le mot de passe doit avoir au moins 9 symboles contenant au moins une lettre et un chiffre</label>
         <tr>
             <td>{{ form_label(formUser.motdepasse.first, "Mot de passe") }}</td>
             <td>{{ form_widget(formUser.motdepasse.first) }}</td>
