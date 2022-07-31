@@ -31,15 +31,16 @@ class UserController extends AbstractController
     // Se connecter à un compte
     public function loginAction(ManagerRegistry $doctrine, Request $request)
     {
+        return $this->render("accueil.html.twig");
         // Si le client est déjà connecté
-        // if($this->EvaluerConnection($doctrine, $request) != null)
-        // {
-        //     $this->addFlash(
-        //         'notice',
-        //         'Veuillez vous déconnecter avant de tenter une connexion'
-        //     );
-        //     return $this->redirectToRoute('pageAccueil');
-        // }
+        if($this->EvaluerConnection($doctrine, $request) != null)
+        {
+            $this->addFlash(
+                'notice',
+                'Veuillez vous déconnecter avant de tenter une connexion'
+            );
+            return $this->redirectToRoute('pageAccueil');
+        }
 
         $user = new User();
         $formUser = $this->createForm(UserType::class, $user);
