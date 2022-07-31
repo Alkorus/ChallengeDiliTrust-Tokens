@@ -31,7 +31,7 @@ class UserController extends AbstractController
     // Se connecter à un compte
     public function loginAction(ManagerRegistry $doctrine, Request $request)
     {
-        return $this->render("accueil.html.twig");
+        //return $this->render("accueil.html.twig");
         // Si le client est déjà connecté
         if($this->EvaluerConnection($doctrine, $request) != null)
         {
