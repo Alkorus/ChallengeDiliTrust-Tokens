@@ -32,6 +32,10 @@
                     <p>{{proprietaire.nom}} ({{proprietaire.courriel}})</p>
                 {% endfor %}
                 <a href="{{path('download',{id: document.id})}}" class="btn btn-info">Obtenir</a>
+                {% if document.auteur.id == userID %}
+                    <a href="{{path('supprimer',{id: document.id})}}" class="btn btn-danger">Effacer</a>
+                {% endif %}
+                <a href="{{path('supprimer',{id: document.id})}}" class="btn btn-danger">Effacer</a>
             </div>
 
             <div class="col-4">

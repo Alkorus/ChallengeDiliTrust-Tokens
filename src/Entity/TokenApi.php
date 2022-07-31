@@ -54,11 +54,12 @@ class TokenApi
     public function __construct(User $user, bool $estRefresh)
     {
         $exp = new DateTime();
-        if ($estRefresh){
+        if (!$estRefresh){
             $delais = '+' . AUTH_TOKEN_DELAIS_MIN . ' minutes';
         } else {
             $delais = '+' . REFRESH_TOKEN_DELAIS_H . ' hours';
         }
+       
         $this->expiration = $exp->modify($delais);
         $this->user = $user;
         $this->estRefresh = $estRefresh;

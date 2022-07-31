@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\DocumentRepository;
 use DateTime;
+use DateTimeZone;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -49,7 +50,7 @@ class Document
 
     public function __construct(User $user)
     {
-        $this->MomentEnregistrement = new DateTime();
+        $this->MomentEnregistrement = new DateTime('now', new DateTimeZone('America/Toronto'));
         $this->auteur = $user;
         $this->proprietaires = new ArrayCollection();
         $this->ajouterProprietaire($user);

@@ -35,6 +35,7 @@ class DocumentController extends AbstractController
     {
         // Autentifier l'utilisateur à partir de ses infos de session et des tokens
         $gestionUser = new UserController();
+
         $user = $gestionUser->EvaluerConnection($doctrine, $request);
         if($user == null){
             $this->addFlash(
@@ -153,7 +154,7 @@ class DocumentController extends AbstractController
             }
         }
 
-        return $this->render("documentDetails.html.twig", ['document' => $doc, 'usersNP' => $usersNP]);
+        return $this->render("documentDetails.html.twig", ['document' => $doc, 'usersNP' => $usersNP, 'userID' => $user->getId()]);
     }
 
    
@@ -262,6 +263,58 @@ class DocumentController extends AbstractController
         $em->flush();
         
         return $this->redirectToRoute('document', ['id' => $id_doc]);
+    }
+
+    /**
+     * @Route("/supprimer/{id}", name="supprimer") 
+     */
+    // Effacer un document
+    public function supprimerDocument($id, ManagerRegistry $doctrine, Request $request)
+    {
+        // Vérifier l'autentification du client et son droit d'accès au document
+        $gestionUser = new UserController();
+        $user = $gestionUser->EvaluerConnection($doctrine, $request);
+        if($user == null){
+            $this->addFlash(
+                'notice',
+                'Accès refusé'
+            );
+            return $this->redirectToRoute('pageAccueil');
+        }
+        $doc = $this->accesDocument($doctrine, $user, $id);
+        if($doc == Null){
+            $this->addFlash(
+                'notice',
+                'Action refusée.'
+            );
+            return $this->redirectToRoute('listeDocuments');
+        }
+        
+        // S'assurer que le client est l'auteur du document, il est le seul ayant le droit de l'effacer
+        if($doc->getAuteur()->getId() != $user->getId())
+        {
+            $this->addFlash(
+                'notice',
+                "Seul l'auteur peut effectuer cette opération"
+            );
+            return $this->redirectToRoute('document', ['id' => $id]);
+        }
+        
+        $em = $doctrine->getManager();
+        //$doc = $em->getRepository(Document::class)->find($id);
+        // Effacer le document du serveur
+        $chemin = $chemin = $this->getParameter('documents_dossier') . $doc->getLien();
+        unlink($chemin);
+        // Effacer le document de la bibliothèque des propriétaires
+        $proprietaires = $doc->getProprietaires();
+        foreach($proprietaires as $proprietaire){
+            $proprietaire->retirerABibliotheque($doc);
+        }
+        // Effacer le document de la BD
+        $em->remove($doc);
+        $em->flush();        
+        
+        return $this->redirectToRoute('listeDocuments');
     }
 
     // Méthode retournant le document si son accès est autorisé et Null sinon

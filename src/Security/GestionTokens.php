@@ -75,6 +75,8 @@ class GestionTokens extends AbstractController
             $tag = $user->getRefreshToken()->getTag();
             $iv = $user->getRefreshToken()->getIv();
         } else {
+            var_dump('token non reconnu');
+            //die();
             return  $reponse;
         }
         // Essayer de décoder la chaine token
@@ -82,37 +84,51 @@ class GestionTokens extends AbstractController
             $tokenInfo = TokenApi::lireToken($token, $tag, $iv);
         } catch(Exception $e) {
             // si il y a eu une erreur dans la lecture du token, on considère qu'il est invalide
+            var_dump('non décrypté');
+            //die();
             return  $reponse;
         }
         
         // Tester que le Token est le bon (comparer le token enregistré dans la BD et celui passé en param)
         $tokenBD = $em->getRepository(TokenApi::class)->find($tokenInfo['tokenID']);
         if ($tokenBD->getToken() != $token){
-            
+            var_dump('chaine diff de BD');
+            //die();
             return  $reponse;
         }
         // Tester que le Token est encore actif
         if (!$tokenBD->getEstActif()){
-            
+            var_dump('non actif');
+            //die();
             return  $reponse;
         }
         // Vérifier si le token est expiré
         $maintenant = new DateTime();
         if ($maintenant > $tokenBD->getExpiration())
+        {
             $reponse['timeOut'] = true;
             $tokenBD->setEstActif(false);   // Désactiver le token expiré
+            var_dump('token expiré');
+            var_dump($maintenant);
+            var_dump($tokenBD->getExpiration());
+            var_dump($maintenant > $tokenBD->getExpiration());
+            die();
             // On continue le processus car on ne fera un message d'expiration que si le reste du token est OK, limiter l'info donnée
+        }
         
         if ($tokenInfo['estRefresh']) {
             // On vérifie que l'utilisateur ayant passé le token est le propriétaire de celui-ci
             if ($user->getRefreshToken()->getToken() != $token){
+                var_dump('chaine diff user refresh');
+                //die();
                 return  $reponse;
             }
 
         } else {
             // Vérifier que l'utilisateur ayant passé le token est le propriétaire de celui-ci
             if ($user->getAuthToken()->getToken() != $token){
-                
+                var_dump('chaine diff user auth');
+                //die();
                 return  $reponse;
             }
 
