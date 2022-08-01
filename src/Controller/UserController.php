@@ -190,7 +190,7 @@ class UserController extends AbstractController
             $authToken = $request->getSession()->get('token_auth');
             
             $resultatsToken = GestionTokens::EvaluerToken($doctrine, $user, $authToken);
-            var_dump($resultatsToken);
+            
 
             
             // Bloquer l'accès si l'autentification échoue
@@ -200,8 +200,6 @@ class UserController extends AbstractController
                 $request->getSession()->remove('user_id');
                 $request->getSession()->remove('user_nom');
                 $request->getSession()->remove('token_auth');
-                var_dump('non valide');
-                //die();
                 return null;
             }
             // L'authentification est OK mais le token a expiré, laisser savoir au client pourquoi on le bloque
@@ -211,8 +209,7 @@ class UserController extends AbstractController
                 $request->getSession()->remove('user_id');
                 $request->getSession()->remove('user_nom');
                 $request->getSession()->remove('token_auth');
-                var_dump('timeout');
-                //die();
+            
                 return null;
             }
             // Le token d'autentification expire bientôt, on le renouvelle
@@ -237,8 +234,7 @@ class UserController extends AbstractController
                         $request->getSession()->remove('user_nom');
                         $request->getSession()->remove('token_auth');
                         $request->getSession()->remove('token_refresh');
-                        var_dump('refresh brisé');
-                        //die();
+                       
                         return null;
                     }
 
@@ -249,8 +245,7 @@ class UserController extends AbstractController
                     $request->getSession()->remove('user_id');
                     $request->getSession()->remove('user_nom');
                     $request->getSession()->remove('token_auth');
-                    var_dump('non refresh');
-                    //die();
+                
                     return null;
                 }
                 
@@ -259,8 +254,7 @@ class UserController extends AbstractController
             return $user;
 
         }
-        var_dump('var session manquante');
-        //die();
+       
         return null;
     }
 }

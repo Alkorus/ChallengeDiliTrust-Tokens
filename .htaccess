@@ -1,0 +1,8 @@
+DirectoryIndex public_html/index.php public_html/index.html
+
+RewriteEngine On
+RewriteCond %{THE_REQUEST} /public_html/([^\s?]*) [NC]
+RewriteRule ^ %1 [L,NE,R=302]
+
+RewriteRule ^((?!public_html/).*)$ public_html/$1 [L,NC]
+
